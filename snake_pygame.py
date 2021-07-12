@@ -1,5 +1,6 @@
 import pygame, sys, random
 from pygame.math import Vector2
+#import a_star
 
 class Node(object):
     def __init__(self,inx,iny):
@@ -24,6 +25,88 @@ class Node(object):
 
     def __add__(self, other):
         return Node(self.coordinates.x + other.coordinates.x , self.coordinates.y + other.coordinates.y)
+
+    def __str__(self):
+        return "x:" + str(self.coordinates.x) + " " + "y:" + str(self.coordinates.y)
+    
+class Stack(object):
+    def __init__(self):
+        self.data=[]
+    
+    def __len__(self):
+        return len(self.data)
+
+    def push(self, new_in):
+        self.data.append(new_in)
+
+    def pop(self):
+        return self.data.pop(-1)
+
+    def is_empty(self):
+        return len(self.data)==0
+
+
+class Heap(object):
+
+    def __init__(self):
+        self.data = []
+
+    def root(self):
+        return 0
+
+    def __len__(self):
+        return len(self.data)
+
+    def is_empty(self):
+        return len(self.data)==0
+    
+    def parent(self,j):
+        return (j-1)//2
+
+    def left(self,j):
+        return 2*j+1
+
+    def right(self,j):
+        return 2*j+2
+
+    def has_left(self,j):
+        return self.left(j) < len(self)
+
+    def has_right(self,j):
+        return self.right(j) < len(self)
+
+    def swap(self,i,j):
+        self.data[i] , self.data[j] = self.data[j] , self.data[i]
+
+    def upheap(self,j):
+        i = self.parent(j)
+        if j>0 and j<=(len(self)-1):
+            if self.data[j] < self.data[i]:
+                self.swap(j,i)
+            self.upheap(i)
+
+    def downheap(self,j):
+        if self.has_left(j):
+            child_index = self.left(j)
+
+            if self.has_right(j):
+                if self.data[self.right(j)] < self.data[child_index]:
+                    child_index = self.right(j)
+
+            if self.data[child_index] < self.data[j]:
+                self.swap(child_index,j)
+                self.downheap(child_index)
+            
+    def add(self,node):
+        self.data.append(node)
+        j=len(self.data)-1
+        self.upheap(j)
+
+    def remove_min(self):
+        self.swap(0, len(self.data)-1)
+        min_node = self.data.pop(-1)
+        self.downheap(0)
+        return min_node
     
 class BOX(object):
     def __init__(self,x,y):
@@ -164,7 +247,30 @@ for x in range(cell_number):
     for y in range(cell_number):
         grid[x][y] = BOX(x,y)
         grid[x][y].draw_box()
-        
+
+#test cases
+a=Node(5,6)
+a.fn = 11
+b=Node(6,6)
+b.fn=12
+c=Node(7,8)
+c.fn=15
+d=Node(2,3)
+d.fn = 5
+
+s=Stack()
+h=Heap()
+h.add(a)
+h.add(b)
+h.add(c)
+h.add(d)
+
+while (not h.is_empty()):
+    s.push(h.remove_min())
+    
+while (not s.is_empty()):
+    print(s.pop())
+    
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
