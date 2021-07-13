@@ -254,9 +254,7 @@ def search_path(grid, game):
             current_node = current_node.predecessor
             stack.push(current_node)
 
-    print("TRACE PATH")
-    while(not stack.is_empty()):
-        print(stack.pop())
+    return stack
            
 pygame.init()
 cell_size = 20
@@ -294,7 +292,8 @@ for x in range(cell_number):
         grid[x][y].draw_box()
 
 main_game = GAME()
-search_path(grid, main_game)
+s=search_path(grid, main_game)
+
 #test cases
 '''
 a=Node(5,6)
@@ -326,21 +325,33 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        if event.type == SCREEN_UPDATE and main_game.update == 'play':
-            main_game.update_current()
-            main_game.collision(cell_number)
         if event.type == pygame.KEYDOWN:
             if main_game.update == 'stop' and event.key== pygame.K_SPACE:
                 main_game.update = 'play'
-            if main_game.update == 'play' and event.key == pygame.K_UP:
-                main_game.update_new(Vector2(0,-1))
-            if main_game.update == 'play' and event.key == pygame.K_DOWN:
-                main_game.update_new(Vector2(0,1))
-            if main_game.update == 'play' and event.key == pygame.K_LEFT:
-                main_game.update_new(Vector2(-1,0))
-            if main_game.update == 'play' and event.key == pygame.K_RIGHT:
-                main_game.update_new(Vector2(1,0))
+        if event.type == SCREEN_UPDATE and main_game.update == 'play':
+            while (not s.is_empty()):
+                new_direction=s.pop().coordinates - main_game.snake.body[0].coordinates
+                main_game.update_new(new_direction)
+                print(main_game.snake.body[0])
+                #main_game.collision(cell_number)
+
+                main_game.draw_elements()
+                pygame.time.wait(100)
+                pygame.display.update()
+            #if main_game.snake.movement == "eating":
+            #   pygame.quit()
+            #   sys.exit()
+                    
+        
+            #if main_game.update == 'play' and event.key == pygame.K_UP:
+            #   main_game.update_new(Vector2(0,-1))
+            #if main_game.update == 'play' and event.key == pygame.K_DOWN:
+            #   main_game.update_new(Vector2(0,1))
+            #if main_game.update == 'play' and event.key == pygame.K_LEFT:
+            #    main_game.update_new(Vector2(-1,0))
+            #if main_game.update == 'play' and event.key == pygame.K_RIGHT:
+            #    main_game.update_new(Vector2(1,0))
     
     main_game.draw_elements()
+    pygame.time.wait(10)
     pygame.display.update()
-    clock.tick(60)
