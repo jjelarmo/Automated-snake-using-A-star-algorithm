@@ -58,7 +58,6 @@ class Stack(object):
     def is_empty(self):
         return len(self.data)==0
 
-
 class Heap(object):
 
     def __init__(self):
@@ -162,7 +161,7 @@ class SNAKE(object):
     def move_snake_current(self):
         body_copy = self.body[:-1]
         
-        new_field = BOX(self.body[-1].coordinates.x , self.body[-1].coordinates.y)
+        new_field = Node(self.body[-1].coordinates.x , self.body[-1].coordinates.y)
         new_field.draw_box()
         
         new_part_coordinates = self.body[0].coordinates + self.direction
@@ -221,8 +220,9 @@ def search_path(grid, game):
     head=game.snake.body[0]
     destination = game.fruit.position
 
-    print("head: " + str(head))
-    print("destination: " + str(destination))
+
+    #print("head: " + str(head))
+    #print("destination: " + str(destination))
     closed_list = []
     open_list = Heap()
 
@@ -235,7 +235,8 @@ def search_path(grid, game):
     while(current_node != destination):
         #print(current_node)
         found_nodes = [x for x in current_node.find_neighbors(grid) if x.status != "found"]
-        for node in found_nodes:
+        possible_nodes = [x for x in found_nodes if x.status != "snake"]
+        for node in possible_nodes:
             node.status = "found"
             node.gn = step
             node.calculate_hn(destination)
@@ -263,7 +264,7 @@ screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_si
 clock = pygame.time.Clock()
 
 SCREEN_UPDATE = pygame.USEREVENT
-pygame.time.set_timer(SCREEN_UPDATE,150)
+pygame.time.set_timer(SCREEN_UPDATE,10)
 
 grid = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -319,7 +320,6 @@ while (not s.is_empty()):
     print(s.pop())
 
 '''
-    
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -328,21 +328,34 @@ while True:
         if event.type == pygame.KEYDOWN:
             if main_game.update == 'stop' and event.key== pygame.K_SPACE:
                 main_game.update = 'play'
+     
         if event.type == SCREEN_UPDATE and main_game.update == 'play':
             while (not s.is_empty()):
                 new_direction=s.pop().coordinates - main_game.snake.body[0].coordinates
                 main_game.update_new(new_direction)
-                print(main_game.snake.body[0])
+                #print(main_game.snake.body[0])
                 #main_game.collision(cell_number)
 
                 main_game.draw_elements()
                 pygame.time.wait(100)
                 pygame.display.update()
+                main_game.update = 'success'
+
+        if main_game.update == 'success':
+            for x in range(cell_number):
+                for y in range(cell_number):
+                    grid[x][y] = Node(x,y)
+                    grid[x][y].draw_box()
+
+            main_game.draw_elements()
+            s=search_path(grid, main_game)
+            main_game.update = 'play'
+            pygame.display.update()
+                
             #if main_game.snake.movement == "eating":
             #   pygame.quit()
             #   sys.exit()
                     
-        
             #if main_game.update == 'play' and event.key == pygame.K_UP:
             #   main_game.update_new(Vector2(0,-1))
             #if main_game.update == 'play' and event.key == pygame.K_DOWN:
