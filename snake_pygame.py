@@ -5,6 +5,7 @@ from pygame.math import Vector2
 class Node(object):
     def __init__(self,inx,iny):
         self.coordinates= Vector2(inx, iny)
+        self.neighbors=[]
         self.status = "available"
         self.predecessor = None
         self.fn = 999
@@ -12,7 +13,7 @@ class Node(object):
         self.hn = 999   #heurestics
 
     def calculate_hn(self,other):
-        self.hn = int(((self.x - other.x)**2 + (self.y - other.y)**2 )**0.5)
+        self.hn = float(((self.coordinates.x - other.coordinates.x)**2 + (self.coordinates.y - other.coordinates.y)**2 )**0.5)
 
     def calculate_fn(self):
         self.fn = self.gn + self.hn
@@ -27,8 +28,20 @@ class Node(object):
         return Node(self.coordinates.x + other.coordinates.x , self.coordinates.y + other.coordinates.y)
 
     def __str__(self):
-        return "x:" + str(self.coordinates.x) + " " + "y:" + str(self.coordinates.y)
-    
+        return "x:" + str(self.coordinates.x) + " " + "y:" + str(self.coordinates.y) + "fn:" + str(self.fn)
+
+    def find_neighbors(self,grid):
+        x,y = int(self.coordinates.x), int(self.coordinates.y)
+        potential_neighbors = [(x-1,y),(x,y-1), (x+1,y), (x,y+1)]
+        for (new_x, new_y) in potential_neighbors:
+            if new_x<=cell_number-1 and new_x>=0 and new_y<=cell_number-1 and new_y>=0:
+                self.neighbors.append(grid[new_x][new_y])
+        return self.neighbors
+
+    def draw_box(self):
+        field_box = pygame.Rect(self.coordinates.x * cell_size, self.coordinates.y * cell_size, cell_size, cell_size)
+        pygame.draw.rect(screen, (175,215,70), field_box)
+        
 class Stack(object):
     def __init__(self):
         self.data=[]
@@ -117,14 +130,6 @@ class BOX(object):
     def draw_box(self):
         field_box = pygame.Rect(self.field.coordinates.x * cell_size, self.field.coordinates.y * cell_size, cell_size, cell_size)
         pygame.draw.rect(screen, (175,215,70), field_box)
-
-    def find_neighbors(self,grid):
-        x,y = int(self.field.coordinates.x), int(self.field.coordinates.y)
-        potential_neighbors = [(x-1,y),(x,y-1), (x+1,y), (x,y+1)]
-        for (new_x, new_y) in potential_neighbors:
-            if new_x<=cell_number-1 and new_x>=0 and new_y<=cell_number-1 and new_y>=0:
-                self.neighbors.append(grid[new_x][new_y])
-        return self.neighbors
     
 class FRUIT(object):
     def __init__(self):
@@ -212,13 +217,53 @@ class GAME(object):
         pygame.quit()
         sys.exit()
         
-            
+def search_path(grid, game):
+    head=game.snake.body[0]
+    destination = game.fruit.position
+
+    print("head: " + str(head))
+    print("destination: " + str(destination))
+    closed_list = []
+    open_list = Heap()
+
+    head.gn=0
+    head.calculate_hn(destination)
+    head.calculate_fn()
+
+    current_node = head
+    step=1
+    while(current_node != destination):
+        #print(current_node)
+        found_nodes = [x for x in current_node.find_neighbors(grid) if x.status != "found"]
+        for node in found_nodes:
+            node.status = "found"
+            node.gn = step
+            node.calculate_hn(destination)
+            node.calculate_fn()
+            node.predecessor = current_node
+            open_list.add(node)
+        
+        closed_list.append(current_node)
+        current_node = open_list.remove_min()
+        step+=1
+
+    stack = Stack()
+    if current_node == destination:
+        stack.push(current_node)
+        while(current_node != head):
+            current_node = current_node.predecessor
+            stack.push(current_node)
+
+    print("TRACE PATH")
+    while(not stack.is_empty()):
+        print(stack.pop())
+           
 pygame.init()
 cell_size = 20
 cell_number = 20
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size)) #origin top left corner
 clock = pygame.time.Clock()
-main_game = GAME()
+
 SCREEN_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(SCREEN_UPDATE,150)
 
@@ -245,10 +290,13 @@ grid = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 
 for x in range(cell_number):
     for y in range(cell_number):
-        grid[x][y] = BOX(x,y)
+        grid[x][y] = Node(x,y)
         grid[x][y].draw_box()
 
+main_game = GAME()
+search_path(grid, main_game)
 #test cases
+'''
 a=Node(5,6)
 a.fn = 11
 b=Node(6,6)
@@ -270,6 +318,8 @@ while (not h.is_empty()):
     
 while (not s.is_empty()):
     print(s.pop())
+
+'''
     
 while True:
     for event in pygame.event.get():
